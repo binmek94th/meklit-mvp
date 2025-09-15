@@ -6,6 +6,10 @@ const GeneralReport = () => {
     if (isLoading) {
         return (
             <div className="p-6">
+                <div className="mb-8">
+                    <h1 className="text-3xl font-bold text-gray-900 mb-2">General Report</h1>
+                    <p className="text-gray-600">Overview of key metrics and statistics</p>
+                </div>
                 <div className="animate-pulse">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         {[...Array(3)].map((_, index) => (
@@ -20,6 +24,10 @@ const GeneralReport = () => {
     if (error) {
         return (
             <div className="p-6">
+                <div className="mb-8">
+                    <h1 className="text-3xl font-bold text-gray-900 mb-2">General Report</h1>
+                    <p className="text-gray-600">Overview of key metrics and statistics</p>
+                </div>
                 <div className="bg-red-50 border border-red-200 rounded-xl p-4">
                     <div className="flex items-center">
                         <div className="flex-shrink-0">
@@ -129,12 +137,10 @@ const GeneralReport = () => {
     return (
         <div className="p-6 bg-gray-50 min-h-screen">
             <div className="max-w-7xl mx-auto">
-                {/* Header */}
                 <div className="mb-8">
                     <h1 className="text-3xl font-bold text-gray-900 mb-2">General Report</h1>
                     <p className="text-gray-600">Overview of key metrics and statistics</p>
                 </div>
-
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     {stats.map((stat) => (
                         <div
