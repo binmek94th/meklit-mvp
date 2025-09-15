@@ -68,10 +68,21 @@ export const reportAPi = baseApi.injectEndpoints({
                 return "/report/general"
             },
         }),
-        getDailyReport: builder.query<DailyReport, { start_date: string, end_date: string }>({
-            query: ({start_date, end_date}) =>
-                `/report/daily?start_date=${start_date}&end_date=${end_date}`,
-        }),
+        getDailyReport: builder.query<DailyReport,
+            { start_date: string, end_date: string, child_id?: string, staff_id?: string, user_id?: string  }>({
+            query: ({ start_date, end_date, child_id, staff_id, user_id }) => {
+                const params = new URLSearchParams({
+                    start_date,
+                    end_date,
+                });
+
+                if (child_id) params.append("child_id", child_id);
+                if (staff_id) params.append("staff_id", staff_id);
+                if (user_id) params.append("user_id", user_id);
+
+                return `/report/daily?${params.toString()}`;
+            },
+        })
     }),
     overrideExisting: false,
 });
