@@ -28,8 +28,23 @@ router.get("/general", async (req, res) => {
 })
 
 router.get("/daily", async (req, res) => {
-    const child_id = req.query.child_id as string | undefined;
-    const staff_id = req.query.staff_id as string | undefined;
+    const child_id = req.query.child_id
+        ? Array.isArray(req.query.child_id)
+            ? req.query.child_id as string[]
+            : [req.query.child_id as string]
+        : [];
+
+    const staff_id = req.query.staff_id
+        ? Array.isArray(req.query.staff_id)
+            ? req.query.staff_id as string[]
+            : [req.query.staff_id as string]
+        : [];
+
+    const user_id = req.query.user_id
+        ? Array.isArray(req.query.user_id)
+            ? req.query.user_id as string[]
+            : [req.query.user_id as string]
+        : [];
 
     try {
         const startDate = req.query.start_date
@@ -46,8 +61,8 @@ router.get("/daily", async (req, res) => {
         const prevStartDate = new Date(prevEndDate.getTime() - diffMs);
 
         const [currentReport, previousReport] = await Promise.all([
-            getDailyReport(startDate, endDate, { child_id, staff_id }),
-            getDailyReport(prevStartDate, prevEndDate, { child_id, staff_id })
+            getDailyReport(startDate, endDate, { child_id, staff_id, user_id}),
+            getDailyReport(prevStartDate, prevEndDate, { child_id, staff_id, user_id })
         ]);
 
         const currentSummary = generateDailyLogReport(currentReport.dailyLogEntries);

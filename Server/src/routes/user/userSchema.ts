@@ -1,12 +1,12 @@
 import { z } from "zod";
 
-export const staffSchema = z.object({
+export const userSchema = z.object({
     last_name: z.string(),
     first_name: z.string().email(),
 });
 
 export const validateStaff = (data: unknown) => {
-    const result = staffSchema.safeParse(data);
+    const result = userSchema.safeParse(data);
     if (!result.success) return { error: result.error.format() };
     return { value: result.data };
 };

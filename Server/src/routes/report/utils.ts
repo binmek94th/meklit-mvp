@@ -33,7 +33,7 @@ interface HealthRecord {
 export const getDailyReport = async (
     startDate: Date,
     endDate: Date,
-    filters: { child_id?: string; staff_id?: string; user_id?: string }
+    filters: { child_id?: string[]; staff_id?: string[]; user_id?: string[] }
 ): Promise<any> => {
     let dailyLogEntriesRef: FirebaseFirestore.Query = db
         .collection("dailyLogEntries")
@@ -45,14 +45,21 @@ export const getDailyReport = async (
         .where("timestamp", ">=", startDate)
         .where("timestamp", "<=", endDate);
 
-    if (filters.child_id) {
-        dailyLogEntriesRef = dailyLogEntriesRef.where("childId", "==", filters.child_id);
-        healthRecordEntriesRef = healthRecordEntriesRef.where("childId", "==", filters.child_id);
+    // Multiple child filtering
+    if (filters.child_id && filters.child_id.length > 0) {
+        dailyLogEntriesRef = dailyLogEntriesRef.where("childId", "in", filters.child_id);
+        healthRecordEntriesRef = healthRecordEntriesRef.where("childId", "in", filters.child_id);
     }
 
-    if (filters.staff_id) dailyLogEntriesRef = dailyLogEntriesRef.where("staffId", "==", filters.staff_id);
+    // Multiple staff filtering
+    if (filters.staff_id && filters.staff_id.length > 0) {
+        dailyLogEntriesRef = dailyLogEntriesRef.where("staffId", "in", filters.staff_id);
+    }
 
-    if (filters.user_id) healthRecordEntriesRef = healthRecordEntriesRef.where("recordedByUserId", "==", filters.user_id);
+    // Multiple user filtering
+    if (filters.user_id && filters.user_id.length > 0) {
+        healthRecordEntriesRef = healthRecordEntriesRef.where("recordedByUserId", "in", filters.user_id);
+    }
 
     const [snapshotLog, snapshotHealth] = await Promise.all([
         dailyLogEntriesRef.get(),
@@ -80,9 +87,9 @@ export const getDailyReport = async (
         if (e.recordedByUserId) userIds.add(e.recordedByUserId);
     });
 
-    const childMap= await enrichChildren(childIds)
+    const childMap = await enrichChildren(childIds);
     const staffMap = await enrichStaff(staffIds);
-    const userMap = await enrichUser(userIds)
+    const userMap = await enrichUser(userIds);
 
     const enrichedDailyLogs = dailyLogEntries.map((entry: DailyLog) => ({
         ...entry,
@@ -92,8 +99,8 @@ export const getDailyReport = async (
 
     const enrichedHealthRecords = healthRecordEntries.map((entry: HealthRecord) => ({
         ...entry,
-        childName: entry.childId ? childMap[entry.childId] || null : null,
-        recordedByUserName: entry.recordedByUserId ? userMap[entry.recordedByUserId] || null : null,
+        child: entry.childId ? childMap[entry.childId] || null : null,
+        recordedByUser: entry.recordedByUserId ? userMap[entry.recordedByUserId] || null : null,
     }));
 
     return {
