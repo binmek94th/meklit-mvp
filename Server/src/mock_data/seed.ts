@@ -1,58 +1,83 @@
 import path from "path";
-import {db} from "../config/firebase";
-
+import { db } from "../config/firebase";
 const data = require(path.join(__dirname, "./seed_data.json"));
 
-function random(low: number, high: number) {
-    return Math.floor(Math.random() * (high - low) + low);
+function clearCollection(collectionName: string) {
+    return db.collection(collectionName).get().then(snapshot => {
+        const batch = db.batch();
+        snapshot.docs.forEach(doc => batch.delete(doc.ref));
+        return batch.commit().then(() => console.log(`Cleared collection: ${collectionName}`));
+    });
 }
+
+function getDateOffset(offsetDays: number) {
+    const d = new Date();
+    d.setDate(d.getDate() + offsetDays);
+    return d;
+}
+
+const getPositiveIndex = (offset: number, length: number) => ((offset % length) + length) % length;
 
 async function seedFirestore() {
     try {
-        const children = []
-        const staffs = []
-        const users = []
-        console.log("Seeding Children...")
+        const children: string[] = [];
+        const staffs: string[] = [];
+        const users: string[] = [];
+
+        // Clear existing collections
+        await clearCollection("children");
+        await clearCollection("staffs");
+        await clearCollection("users");
+        await clearCollection("dailyLogEntries");
+        await clearCollection("healthRecordEntries");
+
+        console.log("Seeding Children...");
         for (const entry of data.children) {
-            const docRef = db.collection("children").doc()
+            const docRef = db.collection("children").doc();
             await docRef.set(entry);
             children.push(docRef.id);
         }
 
-        console.log("Seeding Staffs...")
+        console.log("Seeding Staffs...");
         for (const entry of data.staffs) {
-            const docRef = db.collection("staffs").doc()
+            const docRef = db.collection("staffs").doc();
             await docRef.set(entry);
             staffs.push(docRef.id);
         }
 
-        console.log("Seeding Users...")
+        console.log("Seeding Users...");
         for (const entry of data.users) {
-            const docRef = db.collection("users").doc()
+            const docRef = db.collection("users").doc();
             await docRef.set(entry);
             users.push(docRef.id);
         }
 
         console.log("Seeding DailyLogEntries...");
-        for (const entry of data.dailyLogEntries) {
-            const docRef = db.collection("dailyLogEntries").doc();
-            await docRef.set(
-                { ...entry,
-                    childId: children[random(0, children.length)],
-                    staffId: staffs[random(0, staffs.length)],
-                    timestamp: new Date(entry.timestamp) });
-                }
+        for (let dayOffset = -15; dayOffset <= 15; dayOffset++) {
+            const timestamp = getDateOffset(dayOffset);
+            for (const entry of data.dailyLogEntries) {
+                const docRef = db.collection("dailyLogEntries").doc();
+                await docRef.set({
+                    ...entry,
+                    childId: children[getPositiveIndex(dayOffset, children.length)],
+                    staffId: staffs[getPositiveIndex(dayOffset, staffs.length)],
+                    timestamp,
+                });
+            }
+        }
 
         console.log("Seeding HealthRecordEntries...");
-
-        for (const entry of data.healthRecordEntries) {
-            const docRef = db.collection("healthRecordEntries").doc();
-            await docRef.set(
-                { ...entry,
-                    timestamp: new Date(entry.timestamp),
-                    childId: children[random(0, children.length)],
-                    recordedByUserId: users[random(0, users.length)],
+        for (let dayOffset = -15; dayOffset <= 15; dayOffset++) {
+            const timestamp = getDateOffset(dayOffset);
+            for (const entry of data.healthRecordEntries) {
+                const docRef = db.collection("healthRecordEntries").doc();
+                await docRef.set({
+                    ...entry,
+                    childId: children[getPositiveIndex(dayOffset, children.length)],
+                    recordedByUserId: users[getPositiveIndex(dayOffset, users.length)],
+                    timestamp,
                 });
+            }
         }
 
         console.log("Seeding Finished");
